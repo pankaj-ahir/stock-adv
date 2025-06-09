@@ -21,21 +21,63 @@ NIFTY50_TICKERS = [
 
 SWING_PICK_FILE = "swing_trades.json"
 
+# def get_stock_data(ticker):
+#     try:
+#         df = yf.download(ticker, period="6mo", interval="1d")
+#         return df if not df.empty else pd.DataFrame()
+#     except:
+#         return pd.DataFrame()
+
 def get_stock_data(ticker):
     try:
         df = yf.download(ticker, period="6mo", interval="1d")
-        return df if not df.empty else pd.DataFrame()
-    except:
+        if df.empty or 'Close' not in df.columns:
+            return pd.DataFrame()
+        return df
+    except Exception as e:
+        print(f"⚠️ Error fetching data for {ticker}: {e}")
         return pd.DataFrame()
 
+
+# def add_technical_indicators(df):
+#     close_series = df['Close']
+#     if isinstance(close_series, pd.DataFrame):
+#         close_series = close_series.squeeze()
+#     df['rsi'] = RSIIndicator(close_series).rsi()
+#     df['sma_20'] = close_series.rolling(window=20).mean()
+#     df['target'] = (close_series.shift(-1) > close_series).astype(int)
+#     return df.dropna()
+
 def add_technical_indicators(df):
-    close_series = df['Close']
-    if isinstance(close_series, pd.DataFrame):
-        close_series = close_series.squeeze()
-    df['rsi'] = RSIIndicator(close_series).rsi()
-    df['sma_20'] = close_series.rolling(window=20).mean()
-    df['target'] = (close_series.shift(-1) > close_series).astype(int)
+    # Step 1: Null या empty dataframe को छोड़ दें
+    if df is None or df.empty:
+        return pd.DataFrame()
+
+    # Step 2: 'Close' column होना चाहिए
+    if 'Close' not in df.columns:
+        return pd.DataFrame()
+
+    # Step 3: Close column को safe तरीके से Series में बदलें
+    close = df['Close']
+    if isinstance(close, pd.DataFrame):
+        close = close.squeeze()
+
+    # Step 4: NaN check करें
+    if close.isnull().all():
+        return pd.DataFrame()
+
+    # Step 5: Indicators लगाएं
+    try:
+        df['rsi'] = RSIIndicator(close).rsi()
+        df['sma_20'] = close.rolling(window=20).mean()
+        df['target'] = (close.shift(-1) > close).astype(int)
+    except Exception as e:
+        print(f"Indicator error: {e}")
+        return pd.DataFrame()
+
     return df.dropna()
+
+
 
 def train_model(df):
     X = df[['rsi', 'sma_20']]
