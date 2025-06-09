@@ -206,46 +206,14 @@ def get_stock_data(ticker):
     except:
         return pd.DataFrame()
 
-# def add_technical_indicators(df):
-#     close_series = df['Close']
-#     if isinstance(close_series, pd.DataFrame):
-#         close_series = close_series.squeeze()
-#     df['rsi'] = RSIIndicator(close_series).rsi()
-#     df['sma_20'] = close_series.rolling(window=20).mean()
-#     df['target'] = (close_series.shift(-1) > close_series).astype(int)
-#     return df.dropna()
-
 def add_technical_indicators(df):
-    df = df.copy()
-
-    # Check if 'Close' exists
-    if 'Close' not in df.columns:
-        raise ValueError("DataFrame में 'Close' कॉलम नहीं है")
-
-    # Force to 1D Series
     close_series = df['Close']
     if isinstance(close_series, pd.DataFrame):
-        close_series = close_series.iloc[:, 0]  # पहली column लो
-    else:
-        close_series = pd.Series(close_series).squeeze()
-
-    # Ensure it's a Series, not DataFrame or numpy array
-    if not isinstance(close_series, pd.Series):
-        raise ValueError("close_series Series नहीं है")
-
-    # Drop NaNs before indicators
-    close_series = close_series.dropna()
-
-    # Set index correctly (for safety)
-    close_series.index = df.index[:len(close_series)]
-
-    # Add indicators
-    df['rsi'] = RSIIndicator(close=close_series).rsi()
+        close_series = close_series.squeeze()
+    df['rsi'] = RSIIndicator(close_series).rsi()
     df['sma_20'] = close_series.rolling(window=20).mean()
     df['target'] = (close_series.shift(-1) > close_series).astype(int)
-
     return df.dropna()
-
 
 def train_model(df):
     X = df[['rsi', 'sma_20']]
