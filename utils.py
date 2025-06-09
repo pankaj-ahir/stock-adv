@@ -1,4 +1,3 @@
-
 import yfinance as yf
 import pandas as pd
 import os
@@ -48,6 +47,8 @@ def get_stock_data(ticker):
 #     df['target'] = (close_series.shift(-1) > close_series).astype(int)
 #     return df.dropna()
 
+from ta.momentum import RSIIndicator
+
 def add_technical_indicators(df):
     # Step 1: Null या empty dataframe को छोड़ दें
     if df is None or df.empty:
@@ -62,8 +63,13 @@ def add_technical_indicators(df):
     if isinstance(close, pd.DataFrame):
         close = close.squeeze()
 
-    # Step 4: NaN check करें
-    if close.isnull().all():
+    # Step 4: NaN check करें - अगर close Series है तभी चेक करें
+    if not isinstance(close, (pd.Series, pd.DataFrame)):
+        # अगर close Series नहीं है, तो df लौटाओ (या खाली df)
+        return pd.DataFrame()
+
+    # NaN चेक करते वक्त double all() से बचने के लिए पहले type चेक करें
+    if (hasattr(close, 'isnull') and close.isnull().all()):
         return pd.DataFrame()
 
     # Step 5: Indicators लगाएं
